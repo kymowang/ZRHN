@@ -10,52 +10,6 @@ namespace VirtualDataBuilder
 
     using log4net;
 
-    public class HeatReader
-    {
-        private int iUploadTime = 3;
-        private int iHeat = 13;
-        private int iMeterId = 24;
-
-        List<string[]> heater = new List<string[]>();
-        public Dictionary<DateTime, int> Result = new Dictionary<DateTime, int>();
-
-        private ILog log = LogManager.GetLogger(typeof(HeatReader));
-        public void ReadHeater(string fileName)
-        {
-            string[] contents = File.ReadAllLines(fileName, Encoding.UTF8);
-            for (int i = 1; i < contents.Length; i++)
-            {
-                var line = contents[i].Trim();
-                if(string.IsNullOrEmpty(line))continue;
-                string[] temp = line.Split(new []{','});
-                //heater.Add(temp);
-                DateTime time;
-                int heat;
-                if (DateTime.TryParse(temp[iUploadTime], out time) && int.TryParse(temp[this.iHeat], out heat))
-                {
-                    if (this.Result.ContainsKey(time))
-                    {
-                        this.Result[time] += heat;
-                    }
-                    else
-                    {
-                        this.Result.Add(time, heat);
-                    }
-                }
-                else
-                {
-                    log.Error(string.Format("Parse failed: [{0}], [{1}]",temp[iUploadTime], temp[iHeat]));
-                }
-            }
-        }
-
-
-       
-
-
-
-    }
-
     public class Builder
     {
         private int iRunTime = 10;
@@ -79,16 +33,18 @@ namespace VirtualDataBuilder
 
         private int roomSizeTotal = 0;
 
+        private int changedHeatTotal = 0;
+
         private int iQuDuanFenTanReLiang = 32;
 
         List<string[]> content= new List<string[]>();
         private ILog log = LogManager.GetLogger(typeof(Builder));
        
 
-        public string Build(string controllerFile, string heaterFile)
+        public string Build(string controllerFile1, string heaterFile)
         {
             //read controller file
-            string[] tempContent = File.ReadAllLines(controllerFile,Encoding.UTF8);
+            string[] tempContent = File.ReadAllLines(controllerFile1,Encoding.Default);
             int maxId = 0;
            for(int i=1;i< tempContent.Length;i++)
            {
@@ -110,14 +66,14 @@ namespace VirtualDataBuilder
 
             //begin write
             string newFileName = Path.Combine(
-                Path.GetDirectoryName(controllerFile),
-                Path.GetFileNameWithoutExtension(controllerFile) + "_" + DateTime.Now.ToString("yyyyMMddHHmm") + ".csv");
+                Path.GetDirectoryName(controllerFile1),
+                Path.GetFileNameWithoutExtension(controllerFile1) + "_" + DateTime.Now.ToString("yyyyMMddHHmm") + ".csv");
             if(File.Exists(newFileName))File.Delete(newFileName);
-            File.Copy(controllerFile,newFileName);
-            using (StreamWriter sw = new StreamWriter(newFileName, true, Encoding.UTF8))
+            File.Copy(controllerFile1,newFileName);
+            using (StreamWriter sw = new StreamWriter(newFileName, true, Encoding.Default))
             {
                 sw.WriteLine();
-                HeatReader hr = new HeatReader();
+                HeaterReader hr = new HeaterReader();
                 hr.ReadHeater(heaterFile);
                 int runTime = int.Parse(content[0][iRunTime]);
                 int totalTime = int.Parse(content[0][this.iTotalTime]);
@@ -150,7 +106,8 @@ namespace VirtualDataBuilder
                         heatTotalThisTime += changedHeat;
                         newData[iTotalQuantityHeat] = (int.Parse(content[j][iTotalQuantityHeat]) + changedHeat).ToString();
                         newData[iQuDuanFenTanReLiang] = Math.Round(distribution * 1000,0).ToString("0");
-                        sw.WriteLine(string.Join(",",newData));
+                        sw.WriteLine(string.Join(",", newData));
+                        //sw.WriteLine(Encoding.Default.GetString(Encoding.UTF8.GetBytes(string.Join(",", newData))));
                         content[j] = (string[])newData.Clone();
                     }
                     deltaHeat = heatDiff - heatTotalThisTime;
@@ -158,5 +115,93 @@ namespace VirtualDataBuilder
             }
             return newFileName;
         }
+
+        public string Build(string controllerFile1, string controllerFile2, string heaterFile)
+        {
+            //read controller file
+            string[] tempContent1 = File.ReadAllLines(controllerFile1, Encoding.Default);
+            string[] tempContent2 = File.ReadAllLines(controllerFile2, Encoding.Default);
+            if (tempContent1.Length != tempContent2.Length)
+            {
+                log.Error("控制器开始数据和结束数据有差异");
+                throw new InvalidDataException("控制器开始数据和结束数据有差异");
+            }
+            int[] controllerChangedHeat=new int[tempContent1.Length];
+
+            int maxId = 0;
+            for (int i = 1; i < tempContent1.Length; i++)
+            {
+                if (string.IsNullOrEmpty(tempContent1[i])) continue;
+                string[] temp1 = tempContent1[i].Split(new[] { ',' });
+                string[] temp2 = tempContent2[i].Split(new[] { ',' });
+
+                maxId = int.Parse(temp1[0]);
+                content.Add(temp1);
+                int roomSize;
+                if (int.TryParse(temp1[iRoomSize], out roomSize))
+                {
+                    roomSizeTotal += roomSize;
+                }
+                else
+                {
+                    log.Error("Parse room size failed: [" + temp1[iRoomSize] + "]");
+                }
+                int heat1 = int.Parse(temp1[iTotalQuantityHeat]);
+                int heat2 = int.Parse(temp2[iTotalQuantityHeat]);
+                controllerChangedHeat[i-1] = heat2 - heat1;
+                changedHeatTotal += controllerChangedHeat[i-1];
+            }
+
+            //begin write
+            string newFileName = Path.Combine(
+                Path.GetDirectoryName(controllerFile1),
+                Path.GetFileNameWithoutExtension(controllerFile1) + "_" + DateTime.Now.ToString("yyyyMMddHHmm") + ".csv");
+            if (File.Exists(newFileName)) File.Delete(newFileName);
+            File.Copy(controllerFile1, newFileName);
+            using (StreamWriter sw = new StreamWriter(newFileName, true, Encoding.Default))
+            {
+                sw.WriteLine();
+                HeaterReader hr = new HeaterReader();
+                hr.ReadHeater(heaterFile);
+                int runTime = int.Parse(content[0][iRunTime]);
+                int totalTime = int.Parse(content[0][this.iTotalTime]);
+                int deltaHeat = 0;
+                for (int i = 1; i < hr.Result.Count; i++)
+                {
+                    var heat1 = hr.Result.Keys.ElementAt(i - 1);
+                    var heat2 = hr.Result.Keys.ElementAt(i);
+                    int heatDiff = hr.Result[heat2] - hr.Result[heat1] + deltaHeat;
+                    int heatTotalThisTime = 0;
+                    TimeSpan timeDiff = heat2 - heat1;
+
+                    for (int j = 0; j < content.Count; j++)
+                    {
+                        string[] newData = (string[])content[j].Clone();
+                        runTime += timeDiff.Hours;
+                        totalTime += timeDiff.Hours;
+                        //newData[0] = (++maxId).ToString();
+                        newData[1] = heat2.ToString("yyyy/M/d H:mm");
+                        //newData[iRunTime] = runTime.ToString("0");
+                        //newData[this.iTotalTime] = totalTime.ToString("0");
+                        //newData[iRoomTemperature] = "0";
+                        //newData[iSetTemperature] = "0";
+                        //newData[iShangQuDuanKaiQiShiJian] = "2";
+                        //newData[iShangQuDuanZongShiJian] = "2";
+                        //newData[iShangQuDuanKaiDu] = "1000";
+                        //newData[iShangQuDuanPingJunWenDu] = "1000";
+                        double distribution = heatDiff * (controllerChangedHeat[j]*1.0) / changedHeatTotal;
+                        int changedHeat = (int)Math.Round(distribution, 0);
+                        heatTotalThisTime += changedHeat;
+                        newData[iTotalQuantityHeat] = (int.Parse(content[j][iTotalQuantityHeat]) + changedHeat).ToString();
+                        newData[iQuDuanFenTanReLiang] = Math.Round(distribution * 1000, 0).ToString("0");
+                        sw.WriteLine(string.Join(",", newData));
+                        content[j] = (string[])newData.Clone();
+                    }
+                    deltaHeat = heatDiff - heatTotalThisTime;
+                }
+            }
+            return newFileName;
+        }
+
     }
 }

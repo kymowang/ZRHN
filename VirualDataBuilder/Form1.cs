@@ -16,11 +16,12 @@ namespace VirtualDataBuilder
 
         private string[] heatFiles;
         private string[] controllerFiles;
+        private string[] controllerFiles2;
         public Form1()
         {
             InitializeComponent();
 
-            
+
         }
 
         private void Form1_Load_1(object sender, EventArgs e)
@@ -32,9 +33,13 @@ namespace VirtualDataBuilder
             this.textBox2.AllowDrop = true;
             textBox2.DragEnter += panel2_DragEnter;
             textBox2.DragDrop += panel2_DragDrop;
+
+            this.textBox3.AllowDrop = true;
+            textBox3.DragEnter += panel2_DragEnter;
+            textBox3.DragDrop += panel3_DragDrop;
         }
 
-       
+
 
         void panel1_DragDrop(object sender, DragEventArgs e)
         {
@@ -50,7 +55,7 @@ namespace VirtualDataBuilder
         {
             if (e.Data.GetDataPresent(DataFormats.FileDrop)) e.Effect = DragDropEffects.Copy;
         }
-        
+
         private void panel2_DragDrop(object sender, DragEventArgs e)
         {
             textBox2.Text = string.Empty;
@@ -58,6 +63,16 @@ namespace VirtualDataBuilder
             foreach (var item in this.controllerFiles)
             {
                 textBox2.Text += item + Environment.NewLine;
+            }
+        }
+
+        private void panel3_DragDrop(object sender, DragEventArgs e)
+        {
+            textBox3.Text = string.Empty;
+            this.controllerFiles2 = (string[])e.Data.GetData(DataFormats.FileDrop);
+            foreach (var item in this.controllerFiles)
+            {
+                textBox3.Text += item + Environment.NewLine;
             }
         }
         private void panel2_DragEnter(object sender, DragEventArgs e)
@@ -71,10 +86,40 @@ namespace VirtualDataBuilder
             //string controllerFile = @"E:\temp\20150521\controller.csv";
             Builder builder = new Builder();
             txtMsg.Text = "处理中...";
-            string resultFile = builder.Build(controllerFiles[0], heatFiles[0]);
-            txtMsg.Text = "完成. ["+resultFile+"]";
+            string resultFile = string.Empty;
+            if (radioButton1.Checked)
+            {
+                resultFile = builder.Build(controllerFiles[0], heatFiles[0]);
+            }
+            else
+            {
+                if (controllerFiles2 == null || controllerFiles2.Length == 0)
+                {
+                    txtMsg.Text = "缺少第二个控制器文件";
+                    return;
+                }
+                resultFile = builder.Build(controllerFiles[0], controllerFiles2[0], heatFiles[0]);
+            }
+
+            txtMsg.Text = "完成." + Environment.NewLine +  resultFile ;
         }
 
-       
+        private void radioButton1_CheckedChanged(object sender, EventArgs e)
+        {
+            if (radioButton1.Checked)
+            {
+                textBox3.Visible = false;
+            }
+        }
+
+        private void radioButton2_CheckedChanged(object sender, EventArgs e)
+        {
+            if (radioButton2.Checked)
+            {
+                textBox3.Visible = true;
+            }
+        }
+
+
     }
 }
