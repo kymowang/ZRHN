@@ -84,24 +84,38 @@ namespace VirtualDataBuilder
         {
             //string heatFile = @"E:\temp\20150521\heater.csv";
             //string controllerFile = @"E:\temp\20150521\controller.csv";
-            Builder builder = new Builder();
-            txtMsg.Text = "处理中...";
-            string resultFile = string.Empty;
-            if (radioButton1.Checked)
+            try
             {
-                resultFile = builder.Build(controllerFiles[0], heatFiles[0]);
-            }
-            else
-            {
-                if (controllerFiles2 == null || controllerFiles2.Length == 0)
+                txtMsg.ResetForeColor();
+                this.Cursor = Cursors.WaitCursor;
+                Builder builder = new Builder();
+                txtMsg.Text = "处理中...";
+                string resultFile = string.Empty;
+                if (radioButton1.Checked)
                 {
-                    txtMsg.Text = "缺少第二个控制器文件";
-                    return;
+                    resultFile = builder.Build(controllerFiles[0], heatFiles[0]);
                 }
-                resultFile = builder.Build(controllerFiles[0], controllerFiles2[0], heatFiles[0]);
-            }
+                else
+                {
+                    if (controllerFiles2 == null || controllerFiles2.Length == 0)
+                    {
+                        txtMsg.Text = "缺少第二个控制器文件";
+                        return;
+                    }
+                    resultFile = builder.Build(controllerFiles[0], controllerFiles2[0], heatFiles[0]);
+                }
 
-            txtMsg.Text = "完成." + Environment.NewLine +  resultFile ;
+                txtMsg.Text = "完成." + Environment.NewLine + resultFile;
+            }
+            catch (Exception ex)
+            {
+                txtMsg.ForeColor = Color.DarkRed;
+                txtMsg.Text = "处理失败！" + Environment.NewLine + ex.Message;
+            }
+            finally
+            {
+                this.Cursor = Cursors.Default;
+            }
         }
 
         private void radioButton1_CheckedChanged(object sender, EventArgs e)

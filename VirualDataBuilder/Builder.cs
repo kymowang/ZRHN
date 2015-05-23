@@ -82,7 +82,12 @@ namespace VirtualDataBuilder
                 {
                     var heat1 = hr.Result.Keys.ElementAt(i-1);
                     var heat2 = hr.Result.Keys.ElementAt(i);
-                    int heatDiff = hr.Result[heat2] - hr.Result[heat1]+deltaHeat;
+                    int heatDiff = hr.Result[heat2] - hr.Result[heat1];
+                    if (heatDiff < 0)
+                    {
+                        throw new InvalidDataException("热量表热量错误, 时间："+heat2);
+                    }
+                    heatDiff += +deltaHeat;
                     int heatTotalThisTime = 0;
                     TimeSpan timeDiff = heat2 - heat1;
 
@@ -102,7 +107,7 @@ namespace VirtualDataBuilder
                         //newData[iShangQuDuanKaiDu] = "1000";
                         //newData[iShangQuDuanPingJunWenDu] = "1000";
                         double distribution = heatDiff * (int.Parse(newData[iRoomSize]) * 1.0) / roomSizeTotal;
-                        int changedHeat = (int)Math.Round(distribution, 0);
+                        int changedHeat = (int)Math.Floor(distribution);
                         heatTotalThisTime += changedHeat;
                         newData[iTotalQuantityHeat] = (int.Parse(content[j][iTotalQuantityHeat]) + changedHeat).ToString();
                         newData[iQuDuanFenTanReLiang] = Math.Round(distribution * 1000,0).ToString("0");
@@ -149,6 +154,10 @@ namespace VirtualDataBuilder
                 int heat1 = int.Parse(temp1[iTotalQuantityHeat]);
                 int heat2 = int.Parse(temp2[iTotalQuantityHeat]);
                 controllerChangedHeat[i-1] = heat2 - heat1;
+                if (controllerChangedHeat[i - 1] < 0)
+                {
+                    throw new InvalidDataException("控制器热量变小, id： ["+ tempContent1[i][0]+"]");
+                }
                 changedHeatTotal += controllerChangedHeat[i-1];
             }
 
@@ -166,6 +175,8 @@ namespace VirtualDataBuilder
                 int runTime = int.Parse(content[0][iRunTime]);
                 int totalTime = int.Parse(content[0][this.iTotalTime]);
                 int deltaHeat = 0;
+
+                double[] remainHeat=new double[content.Count];
                 for (int i = 1; i < hr.Result.Count; i++)
                 {
                     var heat1 = hr.Result.Keys.ElementAt(i - 1);
@@ -177,8 +188,8 @@ namespace VirtualDataBuilder
                     for (int j = 0; j < content.Count; j++)
                     {
                         string[] newData = (string[])content[j].Clone();
-                        runTime += timeDiff.Hours;
-                        totalTime += timeDiff.Hours;
+                        //runTime += timeDiff.Hours;
+                        //totalTime += timeDiff.Hours;
                         //newData[0] = (++maxId).ToString();
                         newData[1] = heat2.ToString("yyyy/M/d H:mm");
                         //newData[iRunTime] = runTime.ToString("0");
@@ -190,7 +201,8 @@ namespace VirtualDataBuilder
                         //newData[iShangQuDuanKaiDu] = "1000";
                         //newData[iShangQuDuanPingJunWenDu] = "1000";
                         double distribution = heatDiff * (controllerChangedHeat[j]*1.0) / changedHeatTotal;
-                        int changedHeat = (int)Math.Round(distribution, 0);
+                        int changedHeat = (int)Math.Floor(distribution);
+                        remainHeat[j] += distribution - changedHeat;//热量的小数部分
                         heatTotalThisTime += changedHeat;
                         newData[iTotalQuantityHeat] = (int.Parse(content[j][iTotalQuantityHeat]) + changedHeat).ToString();
                         newData[iQuDuanFenTanReLiang] = Math.Round(distribution * 1000, 0).ToString("0");
@@ -198,6 +210,7 @@ namespace VirtualDataBuilder
                         content[j] = (string[])newData.Clone();
                     }
                     deltaHeat = heatDiff - heatTotalThisTime;
+
                 }
             }
             return newFileName;

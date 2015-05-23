@@ -46,20 +46,20 @@
             this.txtMsg.Name = "txtMsg";
             this.txtMsg.Size = new System.Drawing.Size(260, 73);
             this.txtMsg.TabIndex = 0;
-            this.txtMsg.Text = "只接受csv文件的格式";
+            this.txtMsg.Text = "只接受csv格式的文件，请勿使用unicode编码";
             // 
             // textBox1
             // 
-            this.textBox1.Location = new System.Drawing.Point(12, 17);
+            this.textBox1.Location = new System.Drawing.Point(13, 17);
             this.textBox1.Multiline = true;
             this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(263, 54);
+            this.textBox1.Size = new System.Drawing.Size(260, 54);
             this.textBox1.TabIndex = 1;
             this.textBox1.Text = "热量表文件拖到这儿";
             // 
             // textBox2
             // 
-            this.textBox2.Location = new System.Drawing.Point(15, 77);
+            this.textBox2.Location = new System.Drawing.Point(13, 77);
             this.textBox2.Multiline = true;
             this.textBox2.Name = "textBox2";
             this.textBox2.Size = new System.Drawing.Size(260, 55);
@@ -78,7 +78,7 @@
             // 
             // textBox3
             // 
-            this.textBox3.Location = new System.Drawing.Point(15, 138);
+            this.textBox3.Location = new System.Drawing.Point(13, 138);
             this.textBox3.Multiline = true;
             this.textBox3.Name = "textBox3";
             this.textBox3.Size = new System.Drawing.Size(260, 55);
