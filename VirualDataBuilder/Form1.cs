@@ -70,7 +70,7 @@ namespace VirtualDataBuilder
         {
             textBox3.Text = string.Empty;
             this.controllerFiles2 = (string[])e.Data.GetData(DataFormats.FileDrop);
-            foreach (var item in this.controllerFiles)
+            foreach (var item in this.controllerFiles2)
             {
                 textBox3.Text += item + Environment.NewLine;
             }
@@ -102,7 +102,7 @@ namespace VirtualDataBuilder
                         txtMsg.Text = "缺少第二个控制器文件";
                         return;
                     }
-                    resultFile = builder.Build(controllerFiles[0], controllerFiles2[0], heatFiles[0]);
+                    resultFile = builder.Build2(controllerFiles[0], controllerFiles2[0], heatFiles[0]);
                 }
 
                 txtMsg.Text = "完成." + Environment.NewLine + resultFile;
