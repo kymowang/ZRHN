@@ -91,7 +91,7 @@ namespace VirtualDataBuilder
                     {
                         throw new InvalidDataException("热量表热量错误, 时间：" + heat2);
                     }
-                    heatDiff += +deltaHeat;
+                    heatDiff += deltaHeat;
                     int heatTotalThisTime = 0;
                     TimeSpan timeDiff = heat2 - heat1;
 
@@ -290,10 +290,12 @@ namespace VirtualDataBuilder
 
                 double[] remainHeat = new double[this.controller1Content.Count];
                 bool[] passCalc = new bool[controller1Content.Count];
+
+                //init
                 for (int i = 0; i < passCalc.Length; i++)
                 {
                     passCalc[i] = false;
-                }
+                } int thisRoomSizeTotal = roomSizeTotal;
                 for (int i = 1; i < hr.Result.Count; i++)
                 {
                     var heat1 = hr.Result.Keys.ElementAt(i - 1);
@@ -306,20 +308,30 @@ namespace VirtualDataBuilder
                     }
                     int heatTotalThisTime = 0;
                     TimeSpan timeDiff = heat2 - heat1;
-                    int thisRoomSizeTotal = roomSizeTotal;
+                    
+                   
                     for (int j = 0; j < this.controller1Content.Count; j++)
                     {
                         int temperatureDelta = new Random(GetRandomSeed()).Next(8, 13);
                         //Thread.Sleep(1);
-
+                       
                         //log.Debug(temperatureDelta);
                         string[] newData = (string[])this.controller1Content[j].Clone();
-                        runTime += timeDiff.Hours;
-                        totalTime += timeDiff.Hours;
+                        runTime = int.Parse(controller1Content[j][iRunTime])+timeDiff.Hours;
+                        if(runTime<int.Parse(controller2Content[j][iRunTime])) newData[iRunTime] = runTime.ToString();
+                        else
+                        {
+                            newData[iRunTime] = controller2Content[j][iRunTime];
+                        }
+                        totalTime = int.Parse(controller1Content[j][iTotalTime])+timeDiff.Hours;
+                        if (totalTime < int.Parse(controller2Content[j][iTotalTime])) newData[iTotalTime] = totalTime.ToString();
+                        else
+                        {
+                            newData[iTotalTime] = controller2Content[j][iTotalTime];
+                        }
                         //newData[0] = (++maxId).ToString();
                         newData[1] = heat2.ToString("yyyy/M/d H:mm");
-                        newData[iRunTime] = runTime.ToString("0");
-                        newData[this.iTotalTime] = totalTime.ToString("0");
+                      
                         //newData[iRoomTemperature] = "0";
                         //newData[iSetTemperature] = "0";
                         //newData[iShangQuDuanKaiQiShiJian] = "2";
@@ -333,7 +345,7 @@ namespace VirtualDataBuilder
                         int fixHeat = 0;
                         if (remainHeat[j] > 1) fixHeat = (int)Math.Floor(remainHeat[j]);
                         remainHeat[j] = remainHeat[j] - fixHeat;
-                        log.Debug(fixHeat + " ： "+remainHeat[j]);
+                        //log.Debug(fixHeat + " ： "+remainHeat[j]);
 
 
                         heatTotalThisTime += changedHeat;

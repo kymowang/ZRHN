@@ -167,8 +167,10 @@ namespace VirtualDataBuilder
                         resultLine[i2temWaterIn] = Math.Round(waterIn / 100.0,2).ToString();
 
                         int waterOut1 = (int)(Math.Floor(float.Parse(prevLine[i1TemperatureReturn]) * 100));
-                        int waterOut2 = waterIn-1;
-                        int waterOut = waterOut1 > waterOut2 ? (new Random(GetRandomSeed()).Next(waterOut2, waterOut1)) : (new Random().Next(waterOut1, waterOut2));
+                        int waterOut2 = (int)(Math.Floor(float.Parse(line[i1TemperatureReturn]) * 100));
+                        int[] water = new int[] { waterOut1, waterOut2, waterIn };
+                        Array.Sort(water);
+                        int waterOut = new Random(GetRandomSeed()).Next(water[0], water[1]);
                         resultLine[i2temWaterOut] = Math.Round(waterOut / 100.0, 2).ToString();
 
                         resultLine[i2heatBaseNumber] = resultLine[i2totalQuantityHeat];
